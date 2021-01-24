@@ -1,7 +1,7 @@
 import pytest
 
 from password_manager.exceptions import AuthenticationFailed
-from password_manager.device_authenticator import DeviceAuthenticator
+from password_manager.core.device_authenticator import DeviceAuthenticator
 
 DEV_ADD_PSWD = 'abc'
 

@@ -3,8 +3,8 @@ import getpass
 
 from hashlib import sha256
 
-from .hashing import prepare_hash
-from .exceptions import AuthenticationFailed, PasswordError
+from password_manager.hashing import prepare_hash
+from password_manager.exceptions import AuthenticationFailed, PasswordError
 
 
 class DeviceAuthenticator:

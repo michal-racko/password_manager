@@ -1,5 +1,6 @@
 import random
 import string
+import logging
 
 from hashlib import sha3_256, sha3_384, sha3_512
 
@@ -38,7 +39,7 @@ class PasswordMaker:
             digestmod=sha3_256
         )
 
-        a = int(sha384_hash, 16) ** 1000
+        a = int(sha384_hash, 16) ** 1500
         b = int(sha256_hash, 16) ** 1500
 
         seed = str(a + b)
@@ -49,7 +50,7 @@ class PasswordMaker:
         )
 
         if length > len(sha384_hash):
-            pass  # TODO: warning log
+            logging.warning(f'Max. password length is: {len(sha384_hash)}')
 
         return ''.join([
             character_mapping[c] for c in sha384_hash[:length]
@@ -80,7 +81,7 @@ class PasswordMaker:
             digestmod=sha3_256
         )
 
-        a = int(sha512_hash, 16) ** 500
+        a = int(sha512_hash, 16) ** 800
         b = int(sha256_hash, 16) ** 1500
 
         seed = str(a + b)
@@ -91,7 +92,7 @@ class PasswordMaker:
         )
 
         if length > len(sha512_hash):
-            pass  # TODO: warning log
+            logging.warning(f'Max. password length is: {len(sha512_hash)}')
 
         return ''.join([
             character_mapping[c] for c in sha512_hash[:length]
