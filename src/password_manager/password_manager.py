@@ -1,5 +1,5 @@
-from .hashing import prepare_hash
-from .device_authenticator import DeviceAuthenticator
+from password_manager.hashing import prepare_hash
+from password_manager.core.device_authenticator import DeviceAuthenticator
 
 
 class PasswordManager:
