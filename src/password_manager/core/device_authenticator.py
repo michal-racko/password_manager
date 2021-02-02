@@ -1,7 +1,7 @@
 import uuid
 import getpass
 
-from hashlib import sha256
+from hashlib import sha3_256
 
 from password_manager.hashing import prepare_hash
 from password_manager.exceptions import AuthenticationFailed, PasswordError
@@ -27,12 +27,16 @@ class DeviceAuthenticator:
         authentication_hash = DeviceAuthenticator.make_authentication_hash()
     """
 
-    def __init__(self, authentication_hash: str):
+    def __init__(self,
+                 authentication_hash: str,
+                 device_keys: set = None):
         self._authentication_hash = authentication_hash
-        self._device_keys = []
 
-    def add_device_key(self, device_key: int):
-        self._device_keys.append(device_key)
+        if device_keys is None:
+            self._device_keys = set()
+
+        else:
+            self._device_keys = device_keys
 
     def authenticate(self) -> str:
         """
@@ -51,11 +55,12 @@ class DeviceAuthenticator:
                 'Unknown device'
             )
 
-        return prepare_hash(str(k), digestmod=sha256)
+        return prepare_hash(str(k), digestmod=sha3_256)
 
     def make_device_key(self) -> int:
         """
         Prepares a new device key based on the device addition password
+        and adds it to the device key set
         """
         pswd = getpass.getpass('Device addition password: ')
         return self._make_device_key(pswd)
@@ -71,7 +76,11 @@ class DeviceAuthenticator:
             )
 
         device_id = self._get_device_id()
-        return k - device_id
+        device_key = k - device_id
+
+        self._device_keys.add(device_key)
+
+        return device_key
 
     @classmethod
     def make_authentication_hash(cls) -> str:
@@ -95,5 +104,5 @@ class DeviceAuthenticator:
     @staticmethod
     def _get_device_id(n_iterations=10) -> int:
         res = str(uuid.getnode())
-        res = prepare_hash(res, n_iterations=n_iterations, digestmod=sha256)
+        res = prepare_hash(res, n_iterations=n_iterations, digestmod=sha3_256)
         return int(res, 16)

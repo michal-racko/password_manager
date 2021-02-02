@@ -1,7 +1,7 @@
 import time
 import pytest
 
-from password_manager.core.password_maker import PasswordMaker
+from password_manager.core import PasswordMaker
 
 
 @pytest.fixture()
