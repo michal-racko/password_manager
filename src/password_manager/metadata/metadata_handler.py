@@ -35,9 +35,19 @@ class MetadataHandler:
         self._load_file()
 
     def add_device_key(self, device_key: int):
+        """
+        Adds the given key to the know device key set
+
+        :param device_key:      current device key
+        """
         self.device_keys.add(device_key)
 
     def remove_device_key(self, device_key: int):
+        """
+        Removes the given device key from the device key set
+
+        :param device_key:      the device key to be removed
+        """
         try:
             self.device_keys.remove(device_key)
 

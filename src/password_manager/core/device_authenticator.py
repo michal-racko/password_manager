@@ -30,6 +30,10 @@ class DeviceAuthenticator:
     def __init__(self,
                  authentication_hash: str,
                  device_keys: set = None):
+        """
+        :param authentication_hash:         hash to do the authentication against
+        :param device_keys:                 a set of known device keys
+        """
         self._authentication_hash = authentication_hash
 
         if device_keys is None:
@@ -66,6 +70,12 @@ class DeviceAuthenticator:
         return self._make_device_key(pswd)
 
     def _make_device_key(self, pswd: str) -> int:
+        """
+        Generates corresponding device key.
+
+        :param pswd:        device addition password
+        :return:            device key
+        """
         dev_add_hash = prepare_hash(pswd)
         k = int(dev_add_hash, 16)
         k_hash = prepare_hash(str(k))
@@ -97,12 +107,24 @@ class DeviceAuthenticator:
 
     @classmethod
     def _make_authentication_hash(cls, pswd: str) -> str:
+        """
+        Generates a new authentication hash
+
+        :param pswd:        password for the hash
+        :return:            authentication hash
+        """
         dev_add_hash = prepare_hash(pswd)
         k = int(dev_add_hash, 16)
         return prepare_hash(str(k))
 
     @staticmethod
     def _get_device_id(n_iterations=10) -> int:
+        """
+        Prepares a unique id based on the device uuid
+
+        :param n_iterations:        n iterations for the hash
+        :return:                    device id
+        """
         res = str(uuid.getnode())
         res = prepare_hash(res, n_iterations=n_iterations, digestmod=sha3_256)
         return int(res, 16)

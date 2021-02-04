@@ -5,6 +5,7 @@ Integration tests for the PasswordManager class
 import pytest
 import pyperclip
 
+from password_manager.exceptions import AuthenticationFailed
 from password_manager.core import PasswordMaker
 from password_manager.metadata import MetadataHandler, PasswordMetadata
 from password_manager.password_manager import PasswordManager
@@ -32,7 +33,8 @@ def metadata_handler(tmp_path_factory) -> MetadataHandler:
         checksum=checksum,
         charset='ludp',
         length=PASSWORD_LENGTH,
-        salt='ghi'
+        salt='ghi',
+        old_salt='ghi'
     )
     handler.add_metadata(metadata)
 
@@ -40,6 +42,9 @@ def metadata_handler(tmp_path_factory) -> MetadataHandler:
 
 
 def test_get_password(metadata_handler):
+    """
+    Tests whether the password generation works properly
+    """
     password_manager = PasswordManager(
         master_password=MASTER_PASSWORD,
         device_token=DEVICE_TOKEN,
@@ -54,6 +59,9 @@ def test_get_password(metadata_handler):
 
 
 def test_add_password(metadata_handler):
+    """
+    Tests whether a new password can be added and retrieved
+    """
     password_manager = PasswordManager(
         master_password=MASTER_PASSWORD,
         device_token=DEVICE_TOKEN,
@@ -75,3 +83,45 @@ def test_add_password(metadata_handler):
 
     assert len(res) == length
     assert type(res) == str
+
+
+def test_remove_password(metadata_handler):
+    """
+    Tests whether a password can be removed from the manager
+    """
+    password_manager = PasswordManager(
+        master_password=MASTER_PASSWORD,
+        device_token=DEVICE_TOKEN,
+        metadata_handler=metadata_handler
+    )
+
+    password_manager._remove_password(CURRENT_INPUT)
+
+    with pytest.raises(AuthenticationFailed):
+        password_manager._get_password(CURRENT_INPUT)
+
+
+def test_update_password(metadata_handler):
+    """
+    Tests whether a password can be updated and whether
+    the previous password can be retrieved
+    """
+    password_manager = PasswordManager(
+        master_password=MASTER_PASSWORD,
+        device_token=DEVICE_TOKEN,
+        metadata_handler=metadata_handler
+    )
+    password_manager._get_password(CURRENT_INPUT)
+    original_pswd = pyperclip.paste()
+
+    password_manager._update_password(CURRENT_INPUT)
+
+    password_manager._get_password(CURRENT_INPUT)
+    pswd = pyperclip.paste()
+
+    assert pswd != original_pswd
+
+    password_manager._get_password(CURRENT_INPUT, which='old')
+    pswd = pyperclip.paste()
+
+    assert pswd == original_pswd

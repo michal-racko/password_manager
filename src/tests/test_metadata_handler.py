@@ -21,6 +21,7 @@ def mock_metadata() -> PasswordMetadata:
     return PasswordMetadata(
         checksum='abc',
         salt='def',
+        old_salt='def',
         charset='ludp',
         length=32
     )
@@ -69,7 +70,8 @@ def test_update_metadata(mock_metadata,
 
     updated = PasswordMetadata(
         checksum=mock_metadata.checksum,
-        salt=mock_metadata.checksum,
+        salt='ghi',
+        old_salt=mock_metadata.salt,
         charset='lud',
         length=22
     )
