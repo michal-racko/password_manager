@@ -4,6 +4,8 @@ venv
 
 testing.py
 
+data
+
 .idea
 */.idea
 */*/.idea

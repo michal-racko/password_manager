@@ -9,6 +9,8 @@ from password_manager.metadata import (
 )
 from password_manager.exceptions import AuthenticationFailed
 
+logger = logging.getLogger(__name__)
+
 
 class PasswordManager:
     """
@@ -81,8 +83,8 @@ class PasswordManager:
 
         if output_method.lower() == 'clip':
             pyperclip.copy(pswd)
-            logging.info(
-                f'Password for: {current_input} has been copied '
+            logger.info(
+                f'The password has been copied '
                 f'to the clipboard'
             )
         elif output_method.lower() == 'terminal':
@@ -97,7 +99,7 @@ class PasswordManager:
         Asks user for new password details and
         adds the corresponding password to the manager.
         """
-        logging.info('Adding a new password to the password manager')
+        logger.info('Adding a new password to the password manager')
 
         new_input = input('New input: ')
         charset = input('Character set <l|u|d|p>: ')
@@ -132,24 +134,26 @@ class PasswordManager:
             old_salt=salt
         )
         self._metadata_handler.add_metadata(metadata)
-        self._metadata_handler.save()
 
-    def remove_password(self):
+    def delete_password(self):
         """
-        Removes the corresponding input.
+        Deletes the corresponding input.
         """
         current_input = input('Current input: ')
-        logging.info(f'Will delete password for: {current_input}')
+        logger.info(f'Will delete password for: {current_input}')
 
         confirm = input('Delete? [y/N]')
 
         if confirm.lower() == 'y':
-            self._remove_password(current_input)
-            logging.info(f'Deleted password for {current_input}')
+            try:
+                self._delete_password(current_input)
+                logger.info(f'Deleted password for {current_input}')
+            except KeyError:
+                logger.warning(f'No password found for: {current_input}')
         else:
-            logging.info('Not deleting')
+            logger.info('Not deleting')
 
-    def _remove_password(self, current_input: str):
+    def _delete_password(self, current_input: str):
         """
         Performs the password removal.
 
@@ -160,7 +164,6 @@ class PasswordManager:
         )
 
         self._metadata_handler.delete_metadata(checksum)
-        self._metadata_handler.save()
 
     def update_password(self):
         """
@@ -168,15 +171,15 @@ class PasswordManager:
         the corresponding password
         """
         current_input = input('Current input: ')
-        logging.info(f'Will update password for: {current_input}')
+        logger.info(f'Will update password for: {current_input}')
 
-        confirm = input('Delete? [y/N]')
+        confirm = input('Update? [y/N]')
 
         if confirm.lower() == 'y':
             self._update_password(current_input)
-            logging.info(f'Updated password for {current_input}')
+            logger.info(f'Updated password for: {current_input}')
         else:
-            logging.info('Not updating')
+            logger.info('Not updating')
 
     def _update_password(self, current_input: str):
         """
@@ -200,14 +203,13 @@ class PasswordManager:
         metadata.salt = secrets.token_hex(32)
 
         self._metadata_handler.update_metadata(metadata)
-        self._metadata_handler.save()
 
     def get_old_password(self):
         """
         Generates password for the given input as it was prior to an update.
         """
         current_input = input('Current input: ')
-        logging.info(f'Will generate old password')
+        logger.info(f'Will generate old password')
         self._get_password(current_input, which='old')
 
     def print_password(self):
@@ -225,4 +227,4 @@ class PasswordManager:
         if confirm.lower() == 'y':
             self._get_password(current_input, output_method='terminal')
         else:
-            logging.info('Not printing the password')
+            logger.info('Not printing the password')

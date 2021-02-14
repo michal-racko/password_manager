@@ -9,6 +9,8 @@ from .password_metadata import PasswordMetadata
 from password_manager.hashing import prepare_hash
 from password_manager.exceptions import AuthenticationFailed
 
+logger = logging.getLogger(__name__)
+
 
 class MetadataHandler:
     """
@@ -25,12 +27,13 @@ class MetadataHandler:
         """
         self._metadata_file = metadata_file
 
-        encryption_key = self._prepare_key(password)
-        self._fernet = Fernet(encryption_key)
-
         self.device_keys: set = None
         self.device_authentication_hash: str = None
+        self._master_password: str = password
         self._password_metadata: dict = None
+
+        encryption_key = self._prepare_key(password)
+        self._fernet = Fernet(encryption_key)
 
         self._load_file()
 
@@ -41,6 +44,14 @@ class MetadataHandler:
         :param device_key:      current device key
         """
         self.device_keys.add(device_key)
+        self._save()
+
+    def set_device_authentication_hash(self, device_authentication_hash: str):
+        """
+        Adds the given authentication hash to metadata
+        """
+        self.device_authentication_hash = device_authentication_hash
+        self._save()
 
     def remove_device_key(self, device_key: int):
         """
@@ -50,9 +61,10 @@ class MetadataHandler:
         """
         try:
             self.device_keys.remove(device_key)
+            self._save()
 
         except KeyError:
-            logging.warning(
+            logger.warning(
                 'Device key not found, not removing'
             )
 
@@ -61,6 +73,10 @@ class MetadataHandler:
         :returns:       corresponding metadata
         :raises:        KeyError if no metadata found for the given checksum
         """
+        if checksum not in self._password_metadata:
+            raise KeyError(
+                'Checksum not found'
+            )
         return self._password_metadata[checksum]
 
     def add_metadata(self, metadata: PasswordMetadata):
@@ -77,6 +93,7 @@ class MetadataHandler:
             )
 
         self._password_metadata[metadata.checksum] = metadata
+        self._save()
 
     def update_metadata(self, metadata: PasswordMetadata):
         """
@@ -91,20 +108,21 @@ class MetadataHandler:
             )
 
         self._password_metadata[metadata.checksum] = metadata
+        self._save()
 
     def delete_metadata(self, checksum: str):
         """
         Deletes corresponding metadata
-        """
-        try:
-            self._password_metadata.pop(checksum)
 
-        except KeyError:
-            logging.warning('Metadata not found, not deleting')
-
-    def save(self):
+        :param checksum:    checksum for the given password
+        :raises:            KeyError if the given checksum is not present
         """
-        Encrypts and saves the metadata
+        self._password_metadata.pop(checksum)
+        self._save()
+
+    def _save(self):
+        """
+        Encrypts and saves metadata
         """
         data = bytes(
             json.dumps({
@@ -144,7 +162,7 @@ class MetadataHandler:
             }
 
         except FileNotFoundError:
-            logging.warning('No metadata found. Starting from scratch')
+            logger.info('Starting from scratch')
 
             self.device_keys = set()
             self._password_metadata = {}

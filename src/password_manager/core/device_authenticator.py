@@ -4,7 +4,7 @@ import getpass
 from hashlib import sha3_256
 
 from password_manager.hashing import prepare_hash
-from password_manager.exceptions import AuthenticationFailed, PasswordError
+from password_manager.exceptions import AuthenticationFailed
 
 
 class DeviceAuthenticator:
@@ -99,7 +99,7 @@ class DeviceAuthenticator:
         """
         pswd = getpass.getpass('Device addition password: ')
         if pswd != getpass.getpass('Confirm passwords: '):
-            raise PasswordError(
+            raise AuthenticationFailed(
                 'passwords do not match'
             )
 

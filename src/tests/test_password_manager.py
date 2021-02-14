@@ -85,7 +85,7 @@ def test_add_password(metadata_handler):
     assert type(res) == str
 
 
-def test_remove_password(metadata_handler):
+def test_delete_password(metadata_handler):
     """
     Tests whether a password can be removed from the manager
     """
@@ -95,7 +95,7 @@ def test_remove_password(metadata_handler):
         metadata_handler=metadata_handler
     )
 
-    password_manager._remove_password(CURRENT_INPUT)
+    password_manager._delete_password(CURRENT_INPUT)
 
     with pytest.raises(AuthenticationFailed):
         password_manager._get_password(CURRENT_INPUT)

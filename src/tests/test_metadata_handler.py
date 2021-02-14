@@ -93,28 +93,42 @@ def test_delete_metadata(mock_metadata,
         metadata_handler.get_metadata(mock_metadata.checksum)
 
 
-def test_save_load(mock_metadata,
-                   metadata_handler):
+def test_persistence(mock_metadata,
+                     metadata_handler):
+    """
+    Asserts the add, update and delete operations are persisted
+    in the metadata file
+    """
     metadata_handler.add_metadata(mock_metadata)
     metadata_handler.add_device_key(1)
 
+    metadata_handler._load_file()
     test_metadata = metadata_handler.get_metadata(mock_metadata.checksum)
     assert mock_metadata == test_metadata
 
-    metadata_handler.save()
-    metadata_handler.delete_metadata(mock_metadata.checksum)
-
-    assert mock_metadata.checksum not in metadata_handler._password_metadata
+    new_metadata = PasswordMetadata(
+        checksum=mock_metadata.checksum,
+        salt='ghi',
+        old_salt='ghi',
+        charset='lp',
+        length=12
+    )
+    metadata_handler.update_metadata(new_metadata)
 
     metadata_handler._load_file()
     test_metadata = metadata_handler.get_metadata(mock_metadata.checksum)
+    assert new_metadata == test_metadata
 
-    assert mock_metadata == test_metadata
+    metadata_handler.delete_metadata(mock_metadata.checksum)
+
+    metadata_handler._load_file()
+    assert mock_metadata.checksum not in metadata_handler._password_metadata
     assert 1 in metadata_handler.device_keys
 
 
 def test_wrong_password(metadata_handler):
-    metadata_handler.save()
+    metadata_handler._save()  # create the file (otherwise a new one
+    # would have been created, no exceptions raised)
 
     with pytest.raises(AuthenticationFailed):
         MetadataHandler(
