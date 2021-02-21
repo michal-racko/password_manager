@@ -102,8 +102,17 @@ class PasswordManager:
         logger.info('Adding a new password to the password manager')
 
         new_input = input('New input: ')
-        charset = input('Character set <l|u|d|p>: ')
-        password_length = int(input('Password length: '))
+        if new_input.strip() == '':
+            logger.error('Must not be empty')
+            return
+        charset = input('Character set <l|u|d|p> [default: lud]: ')
+        if charset.strip() == '':
+            charset = 'lud'
+        password_length = input('Password length [dafault: 20]: ')
+        if password_length.strip() == '':
+            password_length = 20
+        else:
+            password_length = int(password_length)
 
         self._add_password(
             new_input=new_input,
@@ -125,6 +134,12 @@ class PasswordManager:
         checksum = self._password_maker.get_checksum(
             f'{self._master_password}-{self._device_token}-{new_input}'
         )
+        if checksum in self._metadata_handler.checksums:
+            logger.error(
+                'Given password already present, not adding'
+            )
+            return
+
         salt = secrets.token_hex(32)
         metadata = PasswordMetadata(
             checksum=checksum,
@@ -140,16 +155,16 @@ class PasswordManager:
         Deletes the corresponding input.
         """
         current_input = input('Current input: ')
-        logger.info(f'Will delete password for: {current_input}')
+        logger.info(f'Will delete the password')
 
         confirm = input('Delete? [y/N]')
 
         if confirm.lower() == 'y':
             try:
                 self._delete_password(current_input)
-                logger.info(f'Deleted password for {current_input}')
+                logger.info(f'Deleted the password')
             except KeyError:
-                logger.warning(f'No password found for: {current_input}')
+                logger.warning(f'No password found')
         else:
             logger.info('Not deleting')
 
@@ -171,13 +186,13 @@ class PasswordManager:
         the corresponding password
         """
         current_input = input('Current input: ')
-        logger.info(f'Will update password for: {current_input}')
+        logger.info(f'Will update the password')
 
         confirm = input('Update? [y/N]')
 
         if confirm.lower() == 'y':
             self._update_password(current_input)
-            logger.info(f'Updated password for: {current_input}')
+            logger.info(f'Password updated')
         else:
             logger.info('Not updating')
 

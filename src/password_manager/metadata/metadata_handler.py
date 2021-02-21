@@ -6,7 +6,7 @@ from hashlib import sha3_512, md5
 from cryptography.fernet import Fernet, InvalidToken
 
 from .password_metadata import PasswordMetadata
-from password_manager.hashing import prepare_hash
+from password_manager.tools.hashing import prepare_hash
 from password_manager.exceptions import AuthenticationFailed
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,13 @@ class MetadataHandler:
         self._fernet = Fernet(encryption_key)
 
         self._load_file()
+
+    @property
+    def checksums(self) -> set:
+        """
+        :returns:       checksums for all passwords present
+        """
+        return set(self._password_metadata.keys())
 
     def add_device_key(self, device_key: int):
         """

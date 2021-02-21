@@ -4,7 +4,7 @@ import logging
 
 from hashlib import sha3_256, sha3_384, sha3_512
 
-from password_manager.hashing import prepare_hash
+from password_manager.tools.hashing import prepare_hash
 
 
 class PasswordMaker:
@@ -43,7 +43,7 @@ class PasswordMaker:
         b = int(sha256_hash, 16) ** 1500
 
         seed = str(a + b)
-        characters = self._get_characters(options='ludp')
+        characters = self._get_characters(options='lud')
         character_mapping = self._get_character_mapping(
             seed,
             characters

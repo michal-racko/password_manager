@@ -1,3 +1,4 @@
+#!/bin/python3
 import os
 import sys
 import getpass
@@ -28,7 +29,7 @@ args = parse_args()
 
 def prepare_password_manager() -> PasswordManager:
     data_dir = Path(MIKOS_PASSWORD_MANAGER_DIR) / 'data'
-    data_dir.mkdir()
+    data_dir.mkdir(exist_ok=True)
     metadata_file = data_dir / METADATA_FILENAME
 
     if not Path(metadata_file).is_file():
@@ -65,7 +66,6 @@ def prepare_password_manager() -> PasswordManager:
             metadata_handler.set_device_authentication_hash(
                 device_authentication_hash
             )
-
     except AuthenticationFailed as e:
         logger.error(e)
         sys.exit(0)
@@ -99,9 +99,10 @@ def main(password_manager):
             password_manager.delete_password()
         elif args.mode == OperationMode.PRINT:
             password_manager.print_password()
+        elif args.mode == OperationMode.GET_OLD:
+            password_manager.get_old_password()
         else:
             raise NotImplementedError
-
     except AuthenticationFailed as err:
         logger.error(err)
         sys.exit(0)

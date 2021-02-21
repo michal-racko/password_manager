@@ -8,6 +8,7 @@ class OperationMode(enum.IntEnum):
     UPDATE = 3
     DELETE = 4
     PRINT = 5
+    GET_OLD = 6
 
     def __str__(self):
         return self.name.lower()
@@ -31,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     :returns:       parsed command line arguments
     """
     parser = argparse.ArgumentParser(
-        prog='Password manager'
+        prog='main.py'
     )
 
     parser.add_argument(

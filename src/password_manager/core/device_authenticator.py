@@ -3,7 +3,7 @@ import getpass
 
 from hashlib import sha3_256
 
-from password_manager.hashing import prepare_hash
+from password_manager.tools.hashing import prepare_hash
 from password_manager.exceptions import AuthenticationFailed
 
 
@@ -63,17 +63,17 @@ class DeviceAuthenticator:
 
     def make_device_key(self) -> int:
         """
-        Prepares a new device key based on the device addition password
+        Prepares a new device key based on the device authentication password
         and adds it to the device key set
         """
-        pswd = getpass.getpass('Device addition password: ')
+        pswd = getpass.getpass('Device authentication password: ')
         return self._make_device_key(pswd)
 
     def _make_device_key(self, pswd: str) -> int:
         """
         Generates corresponding device key.
 
-        :param pswd:        device addition password
+        :param pswd:        device authentication password
         :return:            device key
         """
         dev_add_hash = prepare_hash(pswd)
@@ -97,7 +97,7 @@ class DeviceAuthenticator:
         """
         Prepares a new authentication hash
         """
-        pswd = getpass.getpass('Device addition password: ')
+        pswd = getpass.getpass('Device authentication password: ')
         if pswd != getpass.getpass('Confirm passwords: '):
             raise AuthenticationFailed(
                 'passwords do not match'
