@@ -22,5 +22,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-test.txt
+          apt-get install xclip
       - name: Run tests with pytest
-        run: pytest src
+        run: pytest -v src

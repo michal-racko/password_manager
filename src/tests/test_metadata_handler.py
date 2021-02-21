@@ -1,6 +1,8 @@
+import time
 import pytest
 
 from password_manager.metadata import MetadataHandler, PasswordMetadata
+from password_manager.exceptions import AuthenticationFailed
 
 PASSWORD = 'abc'
 
@@ -19,9 +21,38 @@ def mock_metadata() -> PasswordMetadata:
     return PasswordMetadata(
         checksum='abc',
         salt='def',
+        old_salt='def',
         charset='ludp',
         length=32
     )
+
+
+def test_prepare_key(metadata_handler):
+    """
+    Asserts the key preparation takes at least 0.2 seconds
+    """
+    prior = time.time()
+    metadata_handler._prepare_key('abc')
+
+    assert time.time() - prior > 0.2
+
+
+def test_attributes(metadata_handler):
+    assert hasattr(metadata_handler, 'device_keys')
+    assert hasattr(metadata_handler, 'device_authentication_hash')
+
+
+def test_add_device_key(metadata_handler):
+    metadata_handler.add_device_key(1)
+
+    assert 1 in metadata_handler.device_keys
+
+
+def test_remove_device_key(metadata_handler):
+    metadata_handler.add_device_key(1)
+    metadata_handler.remove_device_key(1)
+
+    assert 1 not in metadata_handler.device_keys
 
 
 def test_add_metadata(mock_metadata,
@@ -39,7 +70,8 @@ def test_update_metadata(mock_metadata,
 
     updated = PasswordMetadata(
         checksum=mock_metadata.checksum,
-        salt=mock_metadata.checksum,
+        salt='ghi',
+        old_salt=mock_metadata.salt,
         charset='lud',
         length=22
     )
@@ -50,19 +82,56 @@ def test_update_metadata(mock_metadata,
     assert updated == test_metadata
 
 
-def test_save_load(mock_metadata,
-                   metadata_handler):
+def test_delete_metadata(mock_metadata,
+                         metadata_handler):
     metadata_handler.add_metadata(mock_metadata)
+    assert mock_metadata.checksum in metadata_handler._password_metadata
 
-    test_metadata = metadata_handler.get_metadata(mock_metadata.checksum)
-    assert mock_metadata == test_metadata
-
-    metadata_handler.save()
     metadata_handler.delete_metadata(mock_metadata.checksum)
 
-    assert mock_metadata.checksum not in metadata_handler._password_metadata
+    with pytest.raises(KeyError):
+        metadata_handler.get_metadata(mock_metadata.checksum)
+
+
+def test_persistence(mock_metadata,
+                     metadata_handler):
+    """
+    Asserts the add, update and delete operations are persisted
+    in the metadata file
+    """
+    metadata_handler.add_metadata(mock_metadata)
+    metadata_handler.add_device_key(1)
 
     metadata_handler._load_file()
     test_metadata = metadata_handler.get_metadata(mock_metadata.checksum)
-
     assert mock_metadata == test_metadata
+
+    new_metadata = PasswordMetadata(
+        checksum=mock_metadata.checksum,
+        salt='ghi',
+        old_salt='ghi',
+        charset='lp',
+        length=12
+    )
+    metadata_handler.update_metadata(new_metadata)
+
+    metadata_handler._load_file()
+    test_metadata = metadata_handler.get_metadata(mock_metadata.checksum)
+    assert new_metadata == test_metadata
+
+    metadata_handler.delete_metadata(mock_metadata.checksum)
+
+    metadata_handler._load_file()
+    assert mock_metadata.checksum not in metadata_handler._password_metadata
+    assert 1 in metadata_handler.device_keys
+
+
+def test_wrong_password(metadata_handler):
+    metadata_handler._save()  # create the file (otherwise a new one
+    # would have been created, no exceptions raised)
+
+    with pytest.raises(AuthenticationFailed):
+        MetadataHandler(
+            'wrong-pswd',
+            metadata_file=metadata_handler._metadata_file
+        )

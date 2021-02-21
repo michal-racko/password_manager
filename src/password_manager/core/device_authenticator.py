@@ -1,10 +1,10 @@
 import uuid
 import getpass
 
-from hashlib import sha256
+from hashlib import sha3_256
 
-from password_manager.hashing import prepare_hash
-from password_manager.exceptions import AuthenticationFailed, PasswordError
+from password_manager.tools.hashing import prepare_hash
+from password_manager.exceptions import AuthenticationFailed
 
 
 class DeviceAuthenticator:
@@ -27,12 +27,20 @@ class DeviceAuthenticator:
         authentication_hash = DeviceAuthenticator.make_authentication_hash()
     """
 
-    def __init__(self, authentication_hash: str):
+    def __init__(self,
+                 authentication_hash: str,
+                 device_keys: set = None):
+        """
+        :param authentication_hash:         hash to do the authentication against
+        :param device_keys:                 a set of known device keys
+        """
         self._authentication_hash = authentication_hash
-        self._device_keys = []
 
-    def add_device_key(self, device_key: int):
-        self._device_keys.append(device_key)
+        if device_keys is None:
+            self._device_keys = set()
+
+        else:
+            self._device_keys = device_keys
 
     def authenticate(self) -> str:
         """
@@ -51,16 +59,23 @@ class DeviceAuthenticator:
                 'Unknown device'
             )
 
-        return prepare_hash(str(k), digestmod=sha256)
+        return prepare_hash(str(k), digestmod=sha3_256)
 
     def make_device_key(self) -> int:
         """
-        Prepares a new device key based on the device addition password
+        Prepares a new device key based on the device authentication password
+        and adds it to the device key set
         """
-        pswd = getpass.getpass('Device addition password: ')
+        pswd = getpass.getpass('Device authentication password: ')
         return self._make_device_key(pswd)
 
     def _make_device_key(self, pswd: str) -> int:
+        """
+        Generates corresponding device key.
+
+        :param pswd:        device authentication password
+        :return:            device key
+        """
         dev_add_hash = prepare_hash(pswd)
         k = int(dev_add_hash, 16)
         k_hash = prepare_hash(str(k))
@@ -71,16 +86,20 @@ class DeviceAuthenticator:
             )
 
         device_id = self._get_device_id()
-        return k - device_id
+        device_key = k - device_id
+
+        self._device_keys.add(device_key)
+
+        return device_key
 
     @classmethod
     def make_authentication_hash(cls) -> str:
         """
         Prepares a new authentication hash
         """
-        pswd = getpass.getpass('Device addition password: ')
+        pswd = getpass.getpass('Device authentication password: ')
         if pswd != getpass.getpass('Confirm passwords: '):
-            raise PasswordError(
+            raise AuthenticationFailed(
                 'passwords do not match'
             )
 
@@ -88,12 +107,24 @@ class DeviceAuthenticator:
 
     @classmethod
     def _make_authentication_hash(cls, pswd: str) -> str:
+        """
+        Generates a new authentication hash
+
+        :param pswd:        password for the hash
+        :return:            authentication hash
+        """
         dev_add_hash = prepare_hash(pswd)
         k = int(dev_add_hash, 16)
         return prepare_hash(str(k))
 
     @staticmethod
     def _get_device_id(n_iterations=10) -> int:
+        """
+        Prepares a unique id based on the device uuid
+
+        :param n_iterations:        n iterations for the hash
+        :return:                    device id
+        """
         res = str(uuid.getnode())
-        res = prepare_hash(res, n_iterations=n_iterations, digestmod=sha256)
+        res = prepare_hash(res, n_iterations=n_iterations, digestmod=sha3_256)
         return int(res, 16)

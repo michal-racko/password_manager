@@ -1,7 +1,7 @@
 import pytest
 
 from password_manager.exceptions import AuthenticationFailed
-from password_manager.core.device_authenticator import DeviceAuthenticator
+from password_manager.core import DeviceAuthenticator
 
 DEV_ADD_PSWD = 'abc'
 
@@ -21,9 +21,9 @@ def test_authentication(device_authenticator):
     Test adding a device key and using it for authentication
     """
     device_key = device_authenticator._make_device_key(DEV_ADD_PSWD)
-    device_authenticator.add_device_key(device_key)
-    token = device_authenticator.authenticate()
+    assert type(device_key) == int
 
+    token = device_authenticator.authenticate()
     assert type(token) == str
 
 
